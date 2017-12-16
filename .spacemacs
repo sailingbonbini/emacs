@@ -329,9 +329,9 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place you code here."
-  (setq org-directory "/Users/tomdoehler/Dropbox/org")
+  (setq org-directory "/Users/tom/Dropbox/org")
   ;; configure inbox, contains everything captured with org-capture
-  (setq org-default-notes-file "/Users/tomdoehler/Dropbox/org/inbox.org")
+  (setq org-default-notes-file "/Users/tom/Dropbox/org/inbox.org")
   ;; set org-indent-mode, part of clean view (hide stars)
   (setq org-startup-indented t)
   ;; key bindings for increasing / decreasing font size
@@ -342,9 +342,9 @@ you should place you code here."
   (global-set-key "\C-ct" (lambda () (interactive) (org-capture nil "t")))
   ;; configure org templates
   (setq org-capture-templates
-        '(("t" "Todo" entry (file+headline "/Users/tomdoehler/Dropbox/org/inbox.org" "Tasks")
+        '(("t" "Todo" entry (file+headline "/Users/tom/Dropbox/org/inbox.org" "Tasks")
            "* TODO %?\n %i")
-          ("m" "Meeting" entry (file+headline "/Users/tomdoehler/Dropbox/org/inbox.org" "Meetings")
+          ("m" "Meeting" entry (file+headline "/Users/tom/Dropbox/org/inbox.org" "Meetings")
            "* %T Meeting: %?")))
   ;; configure org todo states
   (setq org-todo-keywords
@@ -356,16 +356,12 @@ you should place you code here."
   (setq powerline-default-separator 'nil)
 
   ;;rebind alt-enter in org mode-line
-
-
   (add-hook 'org-mode-hook (lambda()
                              (org-defkey org-mode-map [(meta return)] 'org-meta-return)))
 
   (setq-default org-startup-truncated "t")
 
   (setq-default org-tags-column 140)
-
-  (setq multi-term-program "/bin/zsh")
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
