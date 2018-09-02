@@ -339,8 +339,13 @@ you should place you code here."
   (define-key global-map (kbd "C--") 'text-scale-increase)
 
   ;; clojure keybindings
-  (define-key clojure-mode-map (kbd "s-1") 'spacemacs/cider-send-buffer-in-repl-and-focus)
-  (setq cider-save-file-on-load 'nil)
+  (add-hook 'clojure-mode-hook (lambda ()
+                                 (define-key clojure-mode-map (kbd "s-1") 'spacemacs/cider-send-buffer-in-repl-and-focus)
+                                 (setq cider-save-file-on-load 'nil)))
+
+  ;; python mode keybindings
+  (add-hook 'python-mode-hook (lambda()
+                                (define-key python-mode-map (kbd "s-1") 'python-shell-send-buffer-switch)))
 
   (global-set-key "\C-cc" 'org-capture)
   ;; define C-c t as a global shortcut to capture a task
@@ -378,6 +383,16 @@ you should place you code here."
   (setq-default indent-tabs-mode nil)
   (setq-default standard-indent 2)
   (setq-default tab-width 2)
+
+  (defun magit-private-mode ()
+    (interactive)
+    (setenv "GIT_AUTHOR_NAME"  "sailingbonbini")
+    (setenv "GIT_AUTHOR_EMAIL" "tom@camandtom.com"))
+
+  (defun magit-savvy-mode ()
+    (interactive)
+    (setenv "GIT_AUTHOR_NAME"  "tommser")
+    (setenv "GIT_AUTHOR_EMAIL" "tom@savvy-navvy.com"))
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
