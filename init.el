@@ -75,8 +75,9 @@
   "TAB" '(switch-to-other-buffer :which-key "other buffer")
   "SPC" '(counsel-M-x :which-key "M-x")
   ">" '(comment-line :which-key "comment line")
-  "1" '(ame-window 1 :which-key "select window 1")
+  "1" '(ace-window 1 :which-key "select window 1")
   "2" '(ace-window 2 :which-key "select window 2")
+  "3" '(ace-window 2 :which-key "select window 3")
   
   
   ;; application settings
@@ -122,14 +123,16 @@
   "wd"  '(delete-window :which-key "delete window")
 ))
 
+
+
+
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (elpy zenburn-theme which-key use-package helm general evil doom-themes counsel))))
+)
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
