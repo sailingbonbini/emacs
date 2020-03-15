@@ -59,9 +59,22 @@
 (use-package elpy
   :ensure t
   :defer t
-  :init (advice-add 'python-mode :before 'elpy-enable))
+  :init (advice-add 'python-mode :before 'elpy-enable)                            ;; enable elpy when python mode comes on
+  :config
+  (setq python-indent-offset 2)                                                   ;; offset 2
+  (setq elpy-rpc-python-command "/usr/local/opt/python/libexec/bin/python")       ;; use python 3.8
+  (setq python-shell-interpreter "/usr/local/opt/python/libexec/bin/python")      
+  (setq elpy-rpc-virtualenv-path 'current)                             
+  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))                    ;; use flycheck instead of flymake
+  (add-hook 'elpy-mode-hook 'flycheck-mode))
 
-(use-package ace-window
+
+(use-package winum
+  :ensure t
+  :config
+  (winum-mode))
+
+(use-package nlinum
   :ensure t
   :defer t)
 
@@ -75,10 +88,6 @@
   "TAB" '(switch-to-other-buffer :which-key "other buffer")
   "SPC" '(counsel-M-x :which-key "M-x")
   ">" '(comment-line :which-key "comment line")
-  "1" '(ace-window 1 :which-key "select window 1")
-  "2" '(ace-window 2 :which-key "select window 2")
-  "3" '(ace-window 2 :which-key "select window 3")
-  
   
   ;; application settings
   "a"  '(:ignore t :which-key "applications")
@@ -89,6 +98,7 @@
   "b"  '(:ignore t :which-key "buffer")
   "bb" '(ivy-switch-buffer :which-key "switch buffer")
   "be" '(eval-buffer :which-key "eval buffer")
+  "bd" '(kill-buffer :which-key "delete buf")
 
   ;; emacs tools
   "e" '(:ignore t :which-key "emacs")
@@ -98,6 +108,7 @@
   "f"  '(:ignore t :which-key "file")
   "ff" '(counsel-find-file :which-key "find file")
   "fr" '(counsel-recentf :which-key "recent file")
+  "fp" '(td-load-profile :which-key "find bash profile")
 
   ;;help bindings
   "h"  '(:ignore t :which-key "help")
@@ -109,6 +120,7 @@
   ;;ui bindings
   "u"  '(:ignore t :which-key "UI settings")
   "ut" '(counsel-load-theme :which-key "Load theme")
+  "ul" '(global-linum-mode :which-key "Line numbers")
 
   ;; Window
   "w"  '(:ignore t :which-key "window")
@@ -121,18 +133,45 @@
   "w/"  '(split-window-right :which-key "split right")
   "w-"  '(split-window-below :which-key "split bottom")
   "wd"  '(delete-window :which-key "delete window")
+  "wm"  '(delete-other-windows :which-key "maximize window")
 ))
 
+(general-define-key
+ "s-1" 'winum-select-window-1
+ "s-2" 'winum-select-window-2
+ "s-3" 'winum-select-window-3
+ "s-4" 'winum-select-window-4
+ "s-5" 'winum-select-window-5)
 
+(defun td-load-profile ()
+  (interactive)
+  (find-file "~/.bash_profile"))
 
+(use-package flycheck
+  :ensure t
+  :defer t)
 
+(use-package major-mode-hydra
+  :ensure t
+  :bind
+  ("M-SPC" . major-mode-hydra))
 
+(major-mode-hydra-define python-mode nil
+			 ("Eval"
+			  (("b" elpy-shell-send-region-or-buffer "buffer")
+			   ("s" elpy-shell-send-statement-and-step "statement"))
+			  "Env"
+			  (("a" pyenv-workon "activte")
+			   ("d" pyenv-deactivate "deactivate"))))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
-)
+ '(ace-window-display-mode t)
+ '(package-selected-packages
+   (quote
+    (winum flycheck which-key use-package nlinum major-mode-hydra general evil elpy doom-themes counsel ace-window))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
