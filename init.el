@@ -7,9 +7,13 @@
 (setq ring-bell-function 'ignore)
 (show-paren-mode)
 
+;; push .emacs.d/local to load path
+(push (expand-file-name "~/.emacs.d/local") load-path)
 
 ;; use fn key as control key
-(setq mac-function-modifier 'control)
+;;(setq mac-function-modifier 'control)
+;; (setq mac-command-key-is-meta 1)
+
 
 (add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
 
@@ -28,6 +32,8 @@
     (setq exec-path (split-string path-from-shell path-separator))))
 
 (set-exec-path-from-shell-PATH)
+
+
 
 (defun my/reload-config()
   (interactive)
@@ -69,8 +75,6 @@
 (require 'use-package)
 
 
-
-
 (use-package modus-themes
   :ensure
   :init
@@ -83,7 +87,8 @@
   (modus-themes-load-themes)
   :config
   ;; Load the theme of your choice:
-  (modus-themes-load-operandi) ;; OR (modus-themes-load-vivendi)
+  ;; (modus-themes-load-operandi) ;; OR
+  (modus-themes-load-vivendi)
   :bind ("<f5>" . modus-themes-toggle))
 
 
@@ -135,13 +140,9 @@
   :defer t
   :init (advice-add 'python-mode :before 'elpy-enable)                            ;; enable elpy when python mode comes on
   :config
-  (setq python-indent-offset 2)                                                   ;; offset 2
-  (setq elpy-rpc-python-command "/usr/local/opt/python/libexec/bin/python")       ;; use python 3.8
-  (setq python-shell-interpreter "/usr/local/opt/python/libexec/bin/python")      
-  (setq elpy-rpc-virtualenv-path 'current)                             
+  (setq python-indent-offset 2)                                                 
   (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))                    ;; use flycheck instead of flymake
   (add-hook 'elpy-mode-hook 'flycheck-mode))
-
 
 (use-package winum
   :ensure t
@@ -188,6 +189,24 @@
 (use-package cider
   :ensure t)
 
+;;
+;; slime setup
+;;
+;;(load (expand-file-name "~/.roswell/helper.el"))
+(setq inferior-lisp-program "ros -Q run")
+(use-package slime
+  :ensure t)
+;; make lisp hyperspec available locally
+(load "/Users/dohlertd/.roswell/lisp/clhs-use-local.el" t)
+(setq browse-url-browser-function 'browse-url-generic)
+(setq browse-url-generic-program "/Applications/Firefox.app/Contents/MacOS/firefox")
+;; use slime as a backend for company completion
+(use-package slime-company
+  :after (slime company)
+  :config (setq slime-company-completion 'fuzzy
+                slime-company-after-completion 'slime-company-just-one-space))
+
+
 ;; org mode setup
 (setq org-agenda-files '("~/org/inbox.org"
 			 "~/org/notes.org"
@@ -196,9 +215,8 @@
 
 ;; tags
 (setq org-tag-alist '(("sharon")
-		      ("markus") ("asim") ("tsufit") ("venkat")
-		      ("sharon") ("eyal") ("eli") ("doron")
-		      ("mariusz") ("samira") ("shimon") ("graeme") ("limor")
+		      ("bruno") ("paul") ("tsufit") ("venkat")
+		      ("ken") ("eli") ("doron")
 		      ))
 
 
@@ -222,12 +240,11 @@
 ;; hide org's emphasis markers
 (setq org-hide-emphasis-markers t)
 
-
-
 (defun td/capture-task ()
   (interactive)
   (org-capture nil "t"))
 
+;; global key config
 (general-define-key
  "C-c c" 'counsel-org-capture
  "C-x C-d" 'my/duplicate-line
@@ -235,9 +252,7 @@
  "C-c e" 'eval-buffer
  )
 
-
-
-
+;; org mode key config
 (general-define-key
  :keymaps 'org-mode-map
  "C-c a" 'org-agenda
@@ -254,6 +269,12 @@
       '((sequence "TODO(t)" "FOLLOW-UP(f@/!)" "WAITING(w@)" "|" "DONE(d!)" "CANCELLED(c@)")))
 
 (setq org-log-into-drawer t)
+
+;; org-mac-link
+(require 'org-mac-link)
+(add-hook 'org-mode-hook (lambda ()
+			   (define-key org-mode-map (kbd "C-c g") 'org-mac-grab-link)))
+
 
 
 (defun td/split-window-2-and-switch ()
@@ -272,11 +293,11 @@
 
 
 (general-define-key
- "s-1" 'winum-select-window-1
- "s-2" 'td/split-window-2-and-switch
- "s-3" 'td/split-window-3-and-switch
- "s-4" 'winum-select-window-4
- "s-5" 'winum-select-window-5)
+ "M-1" 'winum-select-window-1
+ "M-2" 'td/split-window-2-and-switch
+ "M-3" 'td/split-window-3-and-switch
+ "M-4" 'winum-select-window-4
+ "M-5" 'winum-select-window-5)
 
 (defun td/load-profile ()
   (interactive)
@@ -286,10 +307,17 @@
   :ensure t
   :defer t)
 
+(setq ns-command-modifier 'meta)
+(setq ns-function-modifier 'hyper)
+;;   ns-option-modifier 'meta
+;;   ns-control-modifier 'super
+;;   ns-function-modifier 'control)
+
+
 (use-package major-mode-hydra
   :ensure t
   :bind
-  ("M-SPC" . major-mode-hydra))
+  ("H-SPC" . major-mode-hydra))
 
 (major-mode-hydra-define python-mode nil
 			 ("Eval"
@@ -306,6 +334,13 @@
    "Tools"
    (("w" count-words "count words"))))
 
+(major-mode-hydra-define lisp-mode nil
+  ("Eval"
+   (("b" slime-eval-buffer "buffer")
+    ("s" slime-eval-sexpr "s-expr"))
+   "Tools"
+   (("w" count-words "count words"))))
+
 
 
 (custom-set-variables
@@ -314,8 +349,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   (quote
-    (modus-themes cider zenburn-theme winum which-key use-package org-wc org-superstar olivetti nlinum major-mode-hydra general flycheck elpy doom-themes counsel centered-cursor-mode))))
+   '(slime modus-themes cider zenburn-theme winum which-key use-package org-wc org-superstar olivetti nlinum major-mode-hydra general flycheck elpy doom-themes counsel centered-cursor-mode)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
