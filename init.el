@@ -10,8 +10,14 @@
 
 ;; use fn key as control key
 (setq mac-function-modifier 'control)
+;; use left option key as super key
+(setq mac-option-modifier 'super)
 
-(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+(setq td-local-emacs-dir (file-name-directory (or load-file-name (buffer-file-name))))
+
+(message td-local-emacs-dir)
+
+(add-to-list 'custom-theme-load-path (concat td-local-emacs-dir "/themes/"))
 
 (defun set-exec-path-from-shell-PATH ()
   "Set up Emacs' `exec-path' and PATH environment variable to match
@@ -31,7 +37,7 @@
 
 (defun my/reload-config()
   (interactive)
-  (load-file "~/.emacs.d/init.el"))
+  (load-file (concat td-local-emacs-dir "init.el")))
 
 (defun my/set-olivetti-org-faces()
   (interactive)
@@ -67,8 +73,6 @@
   (package-refresh-contents)
   (package-install 'use-package))
 (require 'use-package)
-
-
 
 
 (use-package modus-themes
@@ -135,9 +139,7 @@
   :defer t
   :init (advice-add 'python-mode :before 'elpy-enable)                            ;; enable elpy when python mode comes on
   :config
-  (setq python-indent-offset 2)                                                   ;; offset 2
-  (setq elpy-rpc-python-command "/usr/local/opt/python/libexec/bin/python")       ;; use python 3.8
-  (setq python-shell-interpreter "/usr/local/opt/python/libexec/bin/python")      
+  (setq python-indent-offset 4)                                                   ;; offset 2
   (setq elpy-rpc-virtualenv-path 'current)                             
   (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))                    ;; use flycheck instead of flymake
   (add-hook 'elpy-mode-hook 'flycheck-mode))
@@ -177,9 +179,9 @@
   :ensure t)
 
 ;;org bullets, make orgs headers look nicer
-(use-package org-superstar
-  :config
-  (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
+;;(use-package org-superstar
+;;  :config
+;;  (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
 
 ;; allows to display word counts on subtrees etc
 (use-package org-wc
@@ -189,10 +191,7 @@
   :ensure t)
 
 ;; org mode setup
-(setq org-agenda-files '("~/org/inbox.org"
-			 "~/org/notes.org"
-			 "~/org/people.org"
-			 "~/org/meetings.org"))
+(setq org-agenda-files '("~/org/inbox.org"))
 
 ;; tags
 (setq org-tag-alist '(("sharon")
@@ -235,9 +234,6 @@
  "C-c e" 'eval-buffer
  )
 
-
-
-
 (general-define-key
  :keymaps 'org-mode-map
  "C-c a" 'org-agenda
@@ -254,7 +250,6 @@
       '((sequence "TODO(t)" "FOLLOW-UP(f@/!)" "WAITING(w@)" "|" "DONE(d!)" "CANCELLED(c@)")))
 
 (setq org-log-into-drawer t)
-
 
 (defun td/split-window-2-and-switch ()
   (interactive)
@@ -306,19 +301,35 @@
    "Tools"
    (("w" count-words "count words"))))
 
+;; web mode
+(use-package web-mode
+  :ensure t
+  :mode
+  (
+   ".html$"
+   ".js$"
+   ".css$"
+   )
+  :config
+  (setq
+   web-mode-markup-indent-offset 2
+   web-mode-css-indent-offset 2
+   web-mode-code-indent-offset 2
+   web-mode-style-padding 2
+   web-mode-script-padding 2
+   web-mode-enable-auto-indentation t
+   web-mode-enable-current-column-highlight t
+   web-mode-enable-current-element-highlight t
+   )  
+  (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.css\\'" . web-mode)))
 
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (modus-themes cider zenburn-theme winum which-key use-package org-wc org-superstar olivetti nlinum major-mode-hydra general flycheck elpy doom-themes counsel centered-cursor-mode))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;; company mode
+(use-package company
+  :bind (:map company-active-map
+         ("C-n" . company-select-next)
+         ("C-p" . company-select-previous))
+  :config
+  (setq company-idle-delay 0.3)
+  (global-company-mode t))
