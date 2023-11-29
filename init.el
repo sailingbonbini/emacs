@@ -6,19 +6,29 @@
 (blink-cursor-mode -1)
 (setq ring-bell-function 'ignore)
 (show-paren-mode)
+(global-display-line-numbers-mode t)
+(setq package-enable-at-startup nil)
 
+;; stick custom varibales in their own files
+(setq custom-file (locate-user-emacs-file "custom-vars.el"))
+(load custom-file 'noerror 'nomessage)
 
-;; use fn key as control key
-(setq mac-function-modifier 'control)
+;; automatically revert buffers on file change
+(global-auto-revert-mode 1)
+
+;; auto update dired buffers as well
+(setq global-auto-revert-non-file-buffers t)
+
+;; push .emacs.d/local to load path
+(push (expand-file-name "~/.emacs.d/local") load-path)
+
 ;; use left option key as super key
 (setq mac-option-modifier 'super)
 
+;; store local emacs directory
 (setq td-local-emacs-dir (file-name-directory (or load-file-name (buffer-file-name))))
 
-(message td-local-emacs-dir)
-
-(add-to-list 'custom-theme-load-path (concat td-local-emacs-dir "/themes/"))
-
+;; make sure emacs PATH matches shell PATH
 (defun set-exec-path-from-shell-PATH ()
   "Set up Emacs' `exec-path' and PATH environment variable to match
    that used by the user's shell.
@@ -35,11 +45,30 @@
 
 (set-exec-path-from-shell-PATH)
 
-(defun my/reload-config()
+
+
+;; use straight.el package manager
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+        'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil))
+
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
+
+(defun td/reload-config()
   (interactive)
   (load-file (concat td-local-emacs-dir "init.el")))
 
-(defun my/set-olivetti-org-faces()
+(defun td/set-olivetti-org-faces()
   (interactive)
   (setq olivetti-body-width 100)
   (custom-set-faces '(org-level-1 ((t (:inherit outline-1 :height 1.2)))))
@@ -51,7 +80,7 @@
   (text-scale-set 2)
   (centered-cursor-mode))
 
-(defun my/duplicate-line()
+(defun td/duplicate-line()
   (interactive)
   (move-beginning-of-line 1)
   (kill-line)
@@ -60,109 +89,103 @@
   (next-line 1)
   (yank))
 
-;; Package configs
-(require 'package)
-(setq package-enable-at-startup nil)
-(setq package-archives '(("org"   . "http://orgmode.org/elpa/")
-                         ("gnu"   . "http://elpa.gnu.org/packages/")
-                         ("melpa" . "https://melpa.org/packages/")))
-(package-initialize)
-
-;; Bootstrap `use-package`
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-(require 'use-package)
-
-
 (use-package modus-themes
-  :ensure
+  :straight
+  '(modus-themes :type git :host github :repo "protesilaos/modus-themes")
   :init
-  ;; Add all your customizations prior to loading the themes
   (setq modus-themes-italic-constructs t
         modus-themes-bold-constructs nil
-        modus-themes-region '(bg-only no-extend))
-
-  ;; Load the theme files before enabling a theme
-  (modus-themes-load-themes)
+        modus-themes-region '(bg-only)
+        modus-themes-paren-match '(bold intense)
+	modus-themes-mode-line '(accented borderless padded))
+  (load-theme 'modus-vivendi t)
   :config
-  ;; Load the theme of your choice:
-  (modus-themes-load-operandi) ;; OR (modus-themes-load-vivendi)
+  (enable-theme 'modus-vivendi)
   :bind ("<f5>" . modus-themes-toggle))
-
-
-;; (use-package zenburn-theme
-;;   :ensure t
-;;   :config
-;;   (load-theme 'zenburn t)
-;; (zenburn-with-color-variables
-;;   (custom-theme-set-faces
-;;    'zenburn
-;;    `(org-level-1 ((t (:foreground ,zenburn-fg))))
-;;    `(org-level-2 ((t (:foreground ,zenburn-fg))))
-;;    `(org-level-3 ((t (:foreground ,zenburn-fg))))
-;;    `(org-level-4 ((t (:foreground ,zenburn-fg))))
-;;    `(org-level-5 ((t (:foreground ,zenburn-fg))))
-;;    `(org-level-6 ((t (:foreground ,zenburn-fg))))
-;;    `(org-level-7 ((t (:foreground ,zenburn-fg))))
-;;    `(org-level-8 ((t (:foreground ,zenburn-fg))))))
-;;   )
-
-;; doom theme
-;;(use-package material-themes
-;;  :ensure t
-;;  :config
-;;  (load-theme 'material t))
 
 
 ;; ivy completion/switcher etc
 (use-package ivy
-  :ensure t
+  :straight
+  '(ivy :type git :host github :repo "abo-abo/swiper")
   :config
   (ivy-mode t)
   (setq ivy-use-virtual-buffers t))
  
-(use-package counsel :ensure t)
-(use-package swiper :ensure t)
+(use-package counsel
+  :straight
+  '(counsel :type git :host github :repo "abo-abo/swiper")
+  )
+
+(use-package swiper
+  :straight
+  '(swiper :type git :host github :repo "abo-abo/swiper")
+  )
 
 ;; Which Key
 (use-package which-key
-  :ensure t
+  :straight
+  '(which-key :type git :host github :repo "justbur/emacs-which-key")
   :init
   (setq which-key-separator " ")
   (setq which-key-prefix-prefix "+")
   :config
   (which-key-mode))
 
-(use-package elpy
-  :ensure t
-  :defer t
-  :init (advice-add 'python-mode :before 'elpy-enable)                            ;; enable elpy when python mode comes on
-  :config
-  (setq python-indent-offset 4)                                                   ;; offset 2
-  (setq elpy-rpc-virtualenv-path 'current)                             
-  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))                    ;; use flycheck instead of flymake
-  (add-hook 'elpy-mode-hook 'flycheck-mode))
-
-
 (use-package winum
-  :ensure t
+  :straight
+  '(winum :type git :host github :repo "deb0ch/emacs-winum")
   :config
   (winum-mode))
 
-(use-package nlinum
-  :ensure t
-  :defer t)
-
 (use-package general
-  :ensure t)
+  :straight
+  '(general :type git :host github :repo "noctuid/general.el")
+  :config
+  ;; global key config
+  (general-define-key
+   "s-," 'beginning-of-buffer
+   "s-." 'end-of-buffer
+   "C-c c" 'counsel-org-capture
+   "C-x C-d" 'td/duplicate-line
+   "C-c r" 'councel-recentf
+   "C-c e" 'eval-buffer
+   "C-x C-r" 'counsel-recentf
+   )
+
+  ;; ORG mode key config
+  (general-define-key
+   :keymaps 'org-mode-map
+   "C-c a" 'org-agenda
+   "C-c C-a" 'org-archive-subtree
+   "C-c c" 'counsel-org-capture
+   "C-c d" 'org-todo
+   "C-c C-r" 'org-refile
+   "C-c C-t" 'counsel-org-tag
+   "C-c t" 'org-todo
+   "C-x C-r" 'counsel-recentf
+   "<f1>" 'td/capture-task) 
+
+  ;; window switch
+  (general-define-key
+   "M-1" 'winum-select-window-1
+   "M-2" 'td/split-window-2-and-switch
+   "M-3" 'td/split-window-3-and-switch
+   "M-4" 'winum-select-window-4
+   "M-5" 'winum-select-window-5)
+  )
+
+(use-package term-toggle
+  :straight
+  '(term-toggle :type git :host github :repo "amno1/emacs-term-toggle")
+  :config
+  (define-key global-map [f2] #'term-toggle-eshell))
 
 ;; enable flyspell for all modes that derive from text mode
 (dolist (hook '(text-mode-hook))
   (add-hook hook (lambda () (flyspell-mode 1))))
 
-(setq ispell-program-name "/usr/local/bin/ispell")
-
+(setq ispell-program-name "/opt/homebrew/bin/ispell")
 (eval-after-load "flyspell"
   '(progn
      (define-key flyspell-mouse-map [down-mouse-3] #'flyspell-correct-word)
@@ -170,84 +193,22 @@
 
 ;; distraction free writing mode
 (use-package olivetti
-  :ensure t
+  :straight
+  '(olivetti :type git :host github :repo "rnkn/olivetti")
   :config
-  (add-hook 'olivetti-mode-hook 'my/set-olivetti-org-faces))
+  (add-hook 'olivetti-mode-hook 'td/set-olivetti-org-faces))
 
 ;;typewriter kind of scrolling
 (use-package centered-cursor-mode
-  :ensure t)
-
-;;org bullets, make orgs headers look nicer
-;;(use-package org-superstar
-;;  :config
-;;  (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
+  :straight
+  '(centered-cursor-mode :type git :host github :repo "andre-r/centered-cursor-mode.el"))
 
 ;; allows to display word counts on subtrees etc
 (use-package org-wc
-  :ensure t)
-
-(use-package cider
-  :ensure t)
-
-;; org mode setup
-(setq org-agenda-files '("~/org/inbox.org"))
-
-;; tags
-(setq org-tag-alist '(("sharon")
-		      ("markus") ("asim") ("tsufit") ("venkat")
-		      ("sharon") ("eyal") ("eli") ("doron")
-		      ("mariusz") ("samira") ("shimon") ("graeme") ("limor")
-		      ))
+  :straight
+  '(org-wc :type git :host github :repo "tesujimath/org-wc"))
 
 
-;; capture templates
-(setq org-capture-templates '(( "t" "Task" entry
-				(file+headline "~/org/inbox.org" "Inbox")
-				"* TODO %?")
-			      ( "n" "Note" entry
-				(file+headline "~/org/inbox.org" "Inbox")
-				"* %?")
-			      ( "m" "Meeting" entry
-				(file+headline "~/org/inbox.org" "Inbox")
-				"* %U %?")))
-;; capture targets
-(setq org-refile-targets '((nil :maxlevel . 9)
-                                (org-agenda-files :maxlevel . 9)))
-(setq org-outline-path-complete-in-steps nil)         ; Refile in a single go
-(setq org-refile-use-outline-path t)                  ; Show full paths for refiling
-(setq org-startup-indented 1)
-
-;; hide org's emphasis markers
-(setq org-hide-emphasis-markers t)
-
-
-
-(defun td/capture-task ()
-  (interactive)
-  (org-capture nil "t"))
-
-(general-define-key
- "C-c c" 'counsel-org-capture
- "C-x C-d" 'my/duplicate-line
- "C-c r" 'councel-recentf
- "C-c e" 'eval-buffer
- )
-
-(general-define-key
- :keymaps 'org-mode-map
- "C-c a" 'org-agenda
- "C-c C-a" 'org-archive-subtree
- "C-c c" 'counsel-org-capture
- "C-c d" 'org-todo
- "C-c C-r" 'org-refile
- "C-c C-t" 'counsel-org-tag
- "C-c t" 'org-todo
- "C-x C-r" 'counsel-recentf
- "<f1>" 'td/capture-task) 
-
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "FOLLOW-UP(f@/!)" "WAITING(w@)" "|" "DONE(d!)" "CANCELLED(c@)")))
 
 (setq org-log-into-drawer t)
 
@@ -265,45 +226,34 @@
     (progn (split-window-vertically)
      (winum-select-window-3))))
 
+;; a function to move a buffer to a window by number
+(defun td/move-buffer-to-window (window-number)
+  "Move the current buffer to the specified window."
+  (interactive "cMove buffer to window: ")
+  (let ((target-window (nth (- window-number (string-to-char "0")) (window-list))))
+    (if target-window
+        (set-window-buffer target-window (current-buffer))
+      (error "Invalid window number"))))
 
-(general-define-key
- "s-1" 'winum-select-window-1
- "s-2" 'td/split-window-2-and-switch
- "s-3" 'td/split-window-3-and-switch
- "s-4" 'winum-select-window-4
- "s-5" 'winum-select-window-5)
+
 
 (defun td/load-profile ()
   (interactive)
   (find-file "~/.bash_profile"))
 
-(use-package flycheck
-  :ensure t
-  :defer t)
+(straight-use-package 'flycheck
+  :straight)
 
-(use-package major-mode-hydra
-  :ensure t
-  :bind
-  ("M-SPC" . major-mode-hydra))
+(setq ns-command-modifier 'meta)
+(setq ns-function-modifier 'hyper)
+;;   ns-option-modifier 'meta
+;;   ns-control-modifier 'super
+;;   ns-function-modifier 'control)
 
-(major-mode-hydra-define python-mode nil
-			 ("Eval"
-			  (("b" elpy-shell-send-region-or-buffer "buffer")
-			   ("s" elpy-shell-send-statement-and-step "statement"))
-			  "Env"
-			  (("a" pyenv-workon "activte")
-			   ("d" pyenv-deactivate "deactivate"))))
-
-(major-mode-hydra-define org-mode nil
-  ("Insert"
-   (("l" org-insert-link "link")
-    ("t" counsel-org-tag "tag"))
-   "Tools"
-   (("w" count-words "count words"))))
 
 ;; web mode
 (use-package web-mode
-  :ensure t
+  :straight
   :mode
   (
    ".html$"
@@ -327,6 +277,7 @@
 
 ;; company mode
 (use-package company
+  :straight
   :bind (:map company-active-map
          ("C-n" . company-select-next)
          ("C-p" . company-select-previous))
