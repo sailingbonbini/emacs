@@ -1,0 +1,353 @@
+#+TITLE: Emacs Configuration
+#+AUTHOR: Tom Doehler
+* Basic configuration
+
+In this section we set a bunch of very basic UI configuration options for emacs.
+
+** Load path
+
+If we have local packages, we should keep them in <emacs-config-dir>/local
+
+#+BEGIN_SRC emacs-lisp
+(push (locate-user-emacs-file "local") load-path)
+#+END_SRC
+
+** Execution path
+
+We want to make sure that Emacs' execution path matched our shell's PATH.
+#+BEGIN_SRC emacs-lisp
+(defun set-exec-path-from-shell-PATH ()
+  "Set up Emacs' `exec-path' and PATH environment variable to match
+   that used by the user's shell.
+
+   This is particularly useful under Mac OS X and macOS, where GUI
+   apps are not started from a shell."
+  (interactive)
+  (let ((path-from-shell (replace-regexp-in-string
+			  "[ \t\n]*$" "" (shell-command-to-string
+					  "$SHELL --login -c 'echo $PATH'"
+						    ))))
+    (setenv "PATH" path-from-shell)
+    (setq exec-path (split-string path-from-shell path-separator))))
+
+(set-exec-path-from-shell-PATH)
+#+END_SRC
+
+** Auto revert
+
+We want buffers to automatically revert if they change on disc. I can't believe that this isn't a default.
+
+#+BEGIN_SRC emacs-lisp
+(global-auto-revert-mode 1)
+#+END_SRC
+
+We also want this to work for dired buffers.
+
+#+BEGIN_SRC emacs-lisp
+(setq global-auto-revert-non-file-buffers t)
+#+END_SRC
+
+** Package manager
+
+We currently use the straight.el package manager. The maintainer has moved on to another package manager (elpaca?), which we should probably check out at some point.
+To make sure we don't have conflicts with package.el, we disable it here.
+
+#+BEGIN_SRC emacs-lisp
+  (setq package-enable-at-startup nil)
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+	 (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+	(bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+	  (url-retrieve-synchronously
+	   "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+	  'silent 'inhibit-cookies)
+	(goto-char (point-max))
+	(eval-print-last-sexp)))
+    (load bootstrap-file nil))
+
+  (straight-use-package 'use-package)
+  (setq straight-use-package-by-default t)
+#+END_SRC
+
+** Variables changed by customize
+
+I really detest having my config messed with by customize. Let's dump everything that gets "customized" into a different file.
+
+#+BEGIN_SRC emacs-lisp
+(setq custom-file (locate-user-emacs-file "custom-vars.el"))
+(load custom-file 'noerror 'nomessage)
+#+END_SRC
+
+** Minimize the user interface
+
+First, let's turn off scroll bars, tool-bars, menu-bars.
+
+#+BEGIN_SRC emacs-lisp
+(scroll-bar-mode -1)
+(tool-bar-mode   -1)
+(tooltip-mode    -1)
+(menu-bar-mode   -1)
+#+END_SRC
+
+Disable a blinking cursor. It makes me nervous.
+#+BEGIN_SRC emacs-lisp
+(blink-cursor-mode -1)
+#+END_SRC
+
+** Make Emacs less noisy
+
+Ignore the bell functionality. This means we won't get feedback if we're trying to scroll past the buffer end for instance, which is just fine for me. 
+
+#+BEGIN_SRC emacs-lisp
+(setq ring-bell-function 'ignore)
+#+END_SRC
+* Themes
+
+Currently, we are using the modus-themes package.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package modus-themes
+    :straight
+    '(modus-themes :type git :host github :repo "protesilaos/modus-themes")
+    :init
+    (setq modus-themes-italic-constructs t
+	  modus-themes-bold-constructs nil
+	  modus-themes-region '(bg-only)
+	  modus-themes-paren-match '(bold intense)
+	  modus-themes-mode-line '(accented borderless padded))
+    (load-theme 'modus-vivendi t)
+    :config
+    (enable-theme 'modus-vivendi)
+    :bind ("<f5>" . modus-themes-toggle))
+#+END_SRC
+
+* Programming
+
+Here we configure everything that is related to programming in Emacs.
+
+** General configuration
+*** Parenthesis
+First, let's turn on paren mode. This means we will have parenthesis highlighting everywhere in emacs.
+#+BEGIN_SRC emacs-lisp
+(show-paren-mode)
+#+END_SRC
+
+*** Line numbers
+Let's show line numbers everywhere. We might want to figure out how to not display line numbers for things like org mode, but for now, we just globally enable them.
+#+BEGIN_SRC emacs-lisp
+(global-display-line-numbers-mode t)
+#+END_SRC
+** Code completion
+
+We're currently using company mode for code completion.
+
+#+BEGIN_SRC emacs-lisp
+(use-package company
+  :straight
+  :bind (:map company-active-map
+         ("C-n" . company-select-next)
+         ("C-p" . company-select-previous))
+  :config
+  (setq company-idle-delay 0.3)
+  (global-company-mode t))
+#+END_SRC
+** Web mode
+
+Web mode for editing html, css and js files.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package web-mode
+    :straight
+    :mode
+    (
+     ".html$"
+     ".js$"
+     ".css$"
+     )
+    :config
+    (setq
+     web-mode-markup-indent-offset 2
+     web-mode-css-indent-offset 2
+     web-mode-code-indent-offset 2
+     web-mode-style-padding 2
+     web-mode-script-padding 2
+     web-mode-enable-auto-indentation t
+     web-mode-enable-current-column-highlight t
+     web-mode-enable-current-element-highlight t
+     )  
+    (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+    (add-to-list 'auto-mode-alist '("\\.js\\'" . web-mode))
+    (add-to-list 'auto-mode-alist '("\\.css\\'" . web-mode)))
+#+END_SRC
+
+* Writing
+** Olivetti mode
+
+Olivetti mode creates a distraction free environment in Emacs. We also use centered-cursor-mode and org-wc here.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package olivetti
+    :straight
+    '(olivetti :type git :host github :repo "rnkn/olivetti")
+    :config
+    (add-hook 'olivetti-mode-hook 'td/set-olivetti-org-faces))
+#+END_SRC
+
+Centered cursor mode gives us this cool typewriter-like feeling when writing.
+
+#+BEGIN_SRC emacs-lisp
+(use-package centered-cursor-mode
+    :straight
+    '(centered-cursor-mode :type git :host github :repo "andre-r/centered-cursor-mode.el"))
+#+END_SRC
+
+This is a little helper that allows us to count words in org mode.
+
+#+BEGIN_SRC emacs-lisp
+(use-package org-wc
+    :straight
+    '(org-wc :type git :host github :repo "tesujimath/org-wc"))
+  (show-paren-mode)
+#+END_SRC
+
+* Key configuration
+** Global configuration
+
+We wan to make use of the mac keys. Here we use the option modifier as the "super" key.
+
+#+BEGIN_SRC emacs-lisp
+(setq mac-option-modifier 'super)
+(setq ns-command-modifier 'meta)
+(setq ns-function-modifier 'hyper)
+;;   ns-option-modifier 'meta
+;;   ns-control-modifier 'super
+;;   ns-function-modifier 'control)
+
+#+END_SRC
+
+** Global key configuration
+
+Here we configure a bunch of global keys using general.el
+
+We first have to auto-unbind keys, to avoid getting error messages about unbound key sequences.
+
+#+BEGIN_SRC emacs-lisp
+    (use-package general
+      :straight
+      '(general :type git :host github :repo "noctuid/general.el")
+      :config
+      (general-auto-unbind-keys)
+      (general-define-key
+       "s-," 'beginning-of-buffer
+       "s-." 'end-of-buffer
+       "C-x C-d" 'td/duplicate-line
+       "C-e b" 'eval-buffer
+       "C-q w" 'td/move-buffer-to-window
+       ))
+#+END_SRC
+
+* Convenience modes
+
+Here we configure a bunch of convenience modes for emacs.
+
+** Which-Key configuration
+
+Which-key is a great package that allows us to easily figure out key bindings. Here we configure global which key mode.
+
+#+BEGIN_SRC emacs-lisp
+(use-package which-key
+  :straight
+  '(which-key :type git :host github :repo "justbur/emacs-which-key")
+  :init
+  (setq which-key-separator " ")
+  (setq which-key-prefix-prefix "+")
+  :config
+  (which-key-mode))
+#+END_SRC
+
+** Window numbers
+
+Winum mode adds a little number to each window. This is super useful if we want to jump to a window by using this number.
+
+#+BEGIN_SRC emacs-lisp
+    (use-package winum
+      :straight
+      '(winum :type git :host github :repo "deb0ch/emacs-winum")
+      :bind (("M-1" . winum-select-window-1)
+	     ("M-2" . winum-select-window-2)
+	     ("M-3" . winum-select-window-3)
+	     ("M-4" . winum-select-window-4)
+	     ("M-5" . winum-select-window-5)
+	     ("M-6" . winum-select-window-6)
+	     ("M-7" . winum-select-window-7)
+	     ("M-8" . winum-select-window-8)
+	     ("M-9" . winum-select-window-9))
+      :config
+      (winum-mode))
+#+END_SRC
+
+** Spell checking
+
+Spell checking using ispell. We probably want something like grammerly here at some point. We are using flyspell in conjunction with ispell, but only for derivatives of text mode.
+
+#+BEGIN_SRC emacs-lisp
+  (dolist (hook '(text-mode-hook))
+    (add-hook hook (lambda () (flyspell-mode 1))))
+
+  (setq ispell-program-name "/opt/homebrew/bin/ispell")
+  (eval-after-load "flyspell"
+    '(progn
+       (define-key flyspell-mouse-map [down-mouse-3] #'flyspell-correct-word)
+       (define-key flyspell-mouse-map [mouse-3] #'undefined)))
+#+END_SRC
+
+** Terminal toggle
+
+This mode allows us to quickly toggle a terminal on and off.
+
+#+BEGIN_SRC emacs-lisp
+(use-package term-toggle
+  :straight
+  '(term-toggle :type git :host github :repo "amno1/emacs-term-toggle")
+  :config
+  (define-key global-map [f2] #'term-toggle-eshell))
+#+END_SRC
+
+* Custom convenience functions
+
+Here we keep a number of convenience functions. They all live in the td/ namespace.
+
+** Reload emacs configuration
+
+Sometimes we want a quick and easy way to reload the emacs configuration.
+
+#+BEGIN_SRC emacs-lisp
+  (setq td-local-emacs-dir (file-name-directory (or load-file-name (buffer-file-name))))
+  (defun td/reload-config()
+      (interactive)
+      (load-file (concat td-local-emacs-dir "init.el")))
+#+END_SRC
+
+** A simple duplicate line function
+#+BEGIN_SRC emacs-lisp
+  (defun td/duplicate-line()
+    (interactive)
+    (move-beginning-of-line 1)
+    (kill-line)
+    (yank)
+    (open-line 1)
+    (next-line 1)
+    (yank))
+#+END_SRC
+** Moving windows by number
+#+BEGIN_SRC emacs-lisp
+  (defun td/move-buffer-to-window (window-number)
+    "Move the current buffer to the specified window."
+    (interactive "cMove buffer to window: ")
+    (let ((target-window (nth (- window-number (string-to-char "0")) (window-list))))
+      (if target-window
+	  (set-window-buffer target-window (current-buffer))
+	(error "Invalid window number"))))
+#+END_SRC
