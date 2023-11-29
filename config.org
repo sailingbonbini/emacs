@@ -234,18 +234,19 @@ Here we configure a bunch of global keys using general.el
 We first have to auto-unbind keys, to avoid getting error messages about unbound key sequences.
 
 #+BEGIN_SRC emacs-lisp
-    (use-package general
-      :straight
-      '(general :type git :host github :repo "noctuid/general.el")
-      :config
-      (general-auto-unbind-keys)
-      (general-define-key
-       "s-," 'beginning-of-buffer
-       "s-." 'end-of-buffer
-       "C-x C-d" 'td/duplicate-line
-       "C-e b" 'eval-buffer
-       "C-q w" 'td/move-buffer-to-window
-       ))
+  (use-package general
+    :straight
+    '(general :type git :host github :repo "noctuid/general.el")
+    :config
+    (general-auto-unbind-keys)
+    (general-define-key
+     "s-," 'beginning-of-buffer
+     "s-." 'end-of-buffer
+     "C-x C-d" 'td/duplicate-line
+     "C-e b" 'eval-buffer
+     "C-q w" 'td/move-buffer-to-window
+     "C-x C-r" 'recentf-open
+     ))
 #+END_SRC
 
 * Convenience modes
@@ -313,6 +314,59 @@ This mode allows us to quickly toggle a terminal on and off.
   '(term-toggle :type git :host github :repo "amno1/emacs-term-toggle")
   :config
   (define-key global-map [f2] #'term-toggle-eshell))
+#+END_SRC
+
+** Command log mode
+
+Command log mode is useful to log all commands that are being executed. 
+
+#+BEGIN_SRC emacs-lisp
+  (use-package command-log-mode
+    :straight
+    '(command-log-mode :type git :host github :repo "lewang/command-log-mode")
+    :config
+    (setq command-log-mode-key-binding-open-log "C-c o")
+    (global-command-log-mode)
+    )
+#+END_SRC
+** Completion
+
+We're using the new completion functionality in Emacs 29.
+
+Let's keep the completions buffer open as long as we have completions, and automatically update it's contents
+
+#+BEGIN_SRC emacs-lisp
+  (setq completion-auto-help 'always)
+#+END_SRC
+
+Auto-select the completion buffer using a second TAB.
+
+#+BEGIN_SRC emacs-lisp
+  (setq completion-auto-select 'second-tab)
+#+END_SRC
+
+** YASnippet
+
+Yasnippet is a template expansion system for emacs.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package yasnippet
+    :straight
+    '(yasnippet :type git :host github :repo "joaotavora/yasnippet")
+    :config
+    (setq yas-snippet-dirs (append yas-snippet-dirs (locate-user-emacs-file "snippets"))) 
+    (yas-global-mode 1))
+#+END_SRC
+
+* Org Mode
+
+Here is where we configure org mode.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :straight (:type built-in)
+    :config
+    (setq org-startup-folded t))
 #+END_SRC
 
 * Custom convenience functions
