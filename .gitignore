@@ -1,4 +1,10 @@
-*/
-spacemacs
+#init.el#
+config.el
+eshell
+eshell/
+straight/
+themes/
 recentf
-recentf~
+custom-vars.el
+**/*~
+\#init.el\#
