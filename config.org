@@ -103,6 +103,10 @@ Ignore the bell functionality. This means we won't get feedback if we're trying 
 #+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 #+END_SRC
+** Save history
+#+BEGIN_SRC emacs-lisp
+(savehist-mode t)
+#+END_SRC
 * Themes
 
 Currently, we are using the modus-themes package.
@@ -144,14 +148,13 @@ Let's show line numbers everywhere. We might want to figure out how to not displ
 We're currently using company mode for code completion.
 
 #+BEGIN_SRC emacs-lisp
-(use-package company
-  :straight
-  :bind (:map company-active-map
-         ("C-n" . company-select-next)
-         ("C-p" . company-select-previous))
-  :config
-  (setq company-idle-delay 0.3)
-  (global-company-mode t))
+  (use-package company
+    :straight
+    '(company :type git :host github :repo "company-mode/company-mode")
+    :config
+    (setq company-idle-delay 0.3
+	  company-minimum-prefix-length 3)
+    (global-company-mode t))
 #+END_SRC
 ** Web mode
 
@@ -180,6 +183,16 @@ Web mode for editing html, css and js files.
     (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
     (add-to-list 'auto-mode-alist '("\\.js\\'" . web-mode))
     (add-to-list 'auto-mode-alist '("\\.css\\'" . web-mode)))
+#+END_SRC
+
+** Python
+#+BEGIN_SRC emacs-lisp
+  (use-package python-ts-mode
+    :straight
+    :hook ((python-ts-mode . eglot-ensure))
+    :mode (("\\.py\\'" . python-ts-mode))
+    :config
+    (setq))  
 #+END_SRC
 
 * Writing
@@ -242,9 +255,20 @@ We first have to auto-unbind keys, to avoid getting error messages about unbound
     (general-define-key
      "s-," 'beginning-of-buffer
      "s-." 'end-of-buffer
+     "s-u" 'undo
      "C-x C-d" 'td/duplicate-line
      "C-e b" 'eval-buffer
-     "C-q w" 'td/move-buffer-to-window
+     "C-e r" 'eval-region
+     "C-e e" 'eval-expression
+     "C-e l" 'eval-last-sexp
+     "C-e p" 'eval-print-last-sexp
+     "C-x w m" 'td/move-buffer-to-window
+     "C-x w -" 'split-window-below
+     "C-x w |" 'split-window-horizontally
+     "C-x w 0" 'delete-window
+     "C-x w m" 'maximize-window
+     "C-x w e" 'enlarge-window
+     "C-x w h" 'enlarge-window-horizontally
      "C-x C-r" 'recentf-open
      ))
 #+END_SRC
@@ -358,6 +382,18 @@ Yasnippet is a template expansion system for emacs.
     (yas-global-mode 1))
 #+END_SRC
 
+** Fuzzy Matching - Orderless
+
+Orderless is a package that allows fuzzy matching in the completion framework. Candidates are grouped and matched, and each group can be matched using different styles (literal, regexp) etc.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package orderless
+    :straight
+    '(orderless :type git :host github :repo "oantolin/orderless")
+    :config
+    (setq completion-styles '(orderless basic)
+	  completion-category-overrides '((file (styles basic partial-completion)))))
+#+END_SRC
 * Org Mode
 
 Here is where we configure org mode.
