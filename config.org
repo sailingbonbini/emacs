@@ -195,6 +195,16 @@ Web mode for editing html, css and js files.
     (setq))  
 #+END_SRC
 
+** Git
+
+Here we're using magit, Emacs excellent git client
+#+BEGIN_SRC emacs-lisp
+  (use-package magit
+    :straight
+    '(magit :type git :host github :repo "magit/magit")
+    :config
+    (setq)) 
+#+END_SRC
 * Writing
 ** Olivetti mode
 
@@ -256,12 +266,14 @@ We first have to auto-unbind keys, to avoid getting error messages about unbound
      "s-," 'beginning-of-buffer
      "s-." 'end-of-buffer
      "s-u" 'undo
-     "C-x C-d" 'td/duplicate-line
      "C-e b" 'eval-buffer
      "C-e r" 'eval-region
      "C-e e" 'eval-expression
      "C-e l" 'eval-last-sexp
      "C-e p" 'eval-print-last-sexp
+     "C-x g s" 'magit-status
+     "C-x g d" 'magit-dispatch
+     "C-x g f" 'magit-file-dispatch
      "C-x w m" 'td/move-buffer-to-window
      "C-x w -" 'split-window-below
      "C-x w |" 'split-window-horizontally
@@ -270,8 +282,12 @@ We first have to auto-unbind keys, to avoid getting error messages about unbound
      "C-x w e" 'enlarge-window
      "C-x w h" 'enlarge-window-horizontally
      "C-x C-r" 'recentf-open
+     "C-x C-d" 'td/duplicate-line
      ))
 #+END_SRC
+
+#+RESULTS:
+: t
 
 * Convenience modes
 
