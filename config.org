@@ -22,8 +22,6 @@ We want to make sure that Emacs' execution path matched our shell's PATH.
   :config (exec-path-from-shell-initialize))
 #+END_SRC
 
-#+END_SRC
-
 ** Auto revert
 
 We want buffers to automatically revert if they change on disc. I can't believe that this isn't a default.
@@ -151,9 +149,6 @@ Web mode for editing html, css and js files.
 
 We're using the treesitter mode that ships with Emacs 29.
 
-For some reason, python-ts-mode does not pick up the config were setting. So we're setting python
-config globally now. Run the below to use IPYthon.
-
 #+BEGIN_SRC emacs-lisp
   (setq python-indent-offset 4)
 #+END_SRC
@@ -163,38 +158,45 @@ Setting python virtual environment variables is a total pain. PET is supposed to
 
 
 #+BEGIN_SRC emacs-lisp
-  (use-package flycheck)
+    (use-package flycheck)
 
-  (use-package python-black)
+    (use-package python-black)
 
-  (use-package pet
-    :straight
-    '(pet :type git :host github :repo "wyuenho/emacs-pet")
-    :ensure-system-package (dasel sqlite3)
-    :config
-    (add-hook 'python-ts-mode-hook
-	      (lambda ()
-		(setq-local python-shell-interpreter (pet-executable-find "python")
-			    python-shell-virtualenv-root (pet-virtualenv-root)
-			    lsp-pylsp-plugins-jedi-environment (pet-virtualenv-root))
-		(pet-flycheck-setup)
-		(flycheck-mode)
-		(setq-local lsp-pyright-python-executable-cmd python-shell-interpreter
-			    lsp-pyright-venv-path python-shell-virtualenv-root)
-		(when-let ((black-executable (pet-executable-find "black")))
-		  (setq-local python-black-command black-executable)
-		  (python-black-on-save-mode))
+    (use-package pet
+      :straight
+      '(pet :type git :host github :repo "wyuenho/emacs-pet")
+      :ensure-system-package (dasel sqlite3)
+      :config
+      (add-hook 'python-ts-mode-hook
+		(lambda ()
+		  (setq-local python-shell-interpreter (pet-executable-find "python")
+			      python-shell-virtualenv-root (pet-virtualenv-root)
+			      lsp-pylsp-plugins-jedi-environment (pet-virtualenv-root))
+		  (pet-flycheck-setup)
+		  (flycheck-mode)
+		  (setq-local lsp-pyright-python-executable-cmd python-shell-interpreter
+			      lsp-pyright-venv-path python-shell-virtualenv-root)
+		  (when-let ((black-executable (pet-executable-find "black")))
+		    (setq-local python-black-command black-executable)
+		    (python-black-on-save-mode))
 
-		(when-let ((isort-executable (pet-executable-find "isort")))
-		  (setq-local python-isort-command isort-executable)
-		  (python-isort-on-save-mode)))))
+		  (when-let ((isort-executable (pet-executable-find "isort")))
+		    (setq-local python-isort-command isort-executable)
+		    (python-isort-on-save-mode)))))
+#+END_SRC
 
-  (use-package eglot)
-;;    :config
-;;    (add-to-list 'eglot-server-programs
-;;		 '(python-mode . (pet-executable-find "pylsp")))
-;;    (add-to-list 'eglot-server-programs
-;;		 '(python-ts-mode . ("~/projects/py-earnings-sailor/.venv/bin/pylsp"))))
+#+RESULTS:
+: t
+
+We ultimately ended up configuring eglot vs .dir-locals.el. The biggest problem
+was that eglot was executing python using the $PATH, which always finds the system
+python interpreter, no matter what I tried. What we do now is to add the current
+virtual env to the PATH in .dir-locals, which makes eglot use the correct python
+interpreter.
+
+#+BEGIN_SRC emacs-lisp
+    (use-package eglot)
+  ;;    :config
 #+END_SRC
 
 #+RESULTS:
@@ -209,9 +211,9 @@ syntax highlighting etc.
     :init
     (setq python-shell-completion-native-enable nil)
     :hook (
-	   ;;	   (python-ts-mode . eglot-ensure)
+	   (python-ts-mode . eglot-ensure)
 	   (python-ts-mode . highlight-indent-guides-mode)
-	   (python-ts-mode . line-number-mode))
+	   (python-ts-mode . display-line-numbers-mode))
     :bind (("C-c d" . python-shell-send-defun))
     :mode (("\\.py\\'" . python-ts-mode)))
 #+END_SRC
@@ -254,6 +256,23 @@ used to evaluate a buffer or file into the shell itself. The below fill fix that
 #+RESULTS:
 | python-comint-filter |
 
+We use pytest.el to run python tests using pytest.
+
+#+BEGIN_SRC emacs-lisp 
+  (use-package pytest
+    :straight
+    '(pytest :type git :host github :repo "ionrock/pytest-el")
+    :bind (
+	   ("C-c t t" . 'pytest-again)
+	   ("C-c t a" . 'pytest-all)
+	   ("C-c t m" . 'pytest-module)
+	   ("C-c t 1" . 'pytest-one)
+	   ("C-c t p" . 'pytest-pdb-one)))
+#+END_SRC
+
+#+RESULTS:
+: pytest-pdb-one
+
 ** Git
 
 Here we're using magit, Emacs excellent git client
@@ -281,6 +300,18 @@ This mode is used to hightlight indentations.
 
 #+RESULTS:
 : t
+
+** Rest client
+
+Rest client for running http requests and pretty-printing responses.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package restclient
+    :straight
+    '(restclient :type git :host github :repo "pashky/restclient.el"))
+#+END_SRC
+
+#+RESULTS:
 
 * Writing
 ** Olivetti mode
@@ -523,6 +554,63 @@ Here is where we configure org mode.
     :config
     (setq org-startup-folded t
 	  org-confirm-babel-evaluate nil))
+#+END_SRC
+
+* Org modern
+
+Org modern is a set of configurations that will make org buffers pretty.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org-modern
+    :straight
+    '(org-modern :type git :host github :repo "minad/org-modern")
+    :init
+    (with-eval-after-load 'org (global-org-modern-mode))
+    :config
+    (setq
+     org-auto-align-tags nil
+     org-tags-column 0
+     org-catch-invisible-edits 'show-and-error
+     org-special-ctrl-a/e t
+     org-insert-heading-respect-content t
+
+     ;; Org styling, hide markup etc.
+     org-hide-emphasis-markers t
+     org-pretty-entities t
+     org-ellipsis "…"
+
+     ;; Agenda styling
+     org-agenda-tags-column 0
+     org-agenda-block-separator ?─
+     org-agenda-time-grid
+     '((daily today require-timed)
+       (800 1000 1200 1400 1600 1800 2000)
+       " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+     org-agenda-current-time-string
+     "◀── now ─────────────────────────────────────────────────")
+
+    (global-org-modern-mode)
+    )
+#+END_SRC
+
+* Org Roam
+
+Org roam uses linked notes to create a graph of connected notes, rather than flat files. Similar
+to roam research, it allows to structure notes and link into core concepts etc.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org-roam
+  :straight
+  '(org-roam :type git :host github :repo "org-roam/org-roam")
+
+  :bind (
+	 ("C-c n l" . org-roam-buffer-toggle)
+	 ("C-c n f" . org-roam-node-find)
+	 ("C-c n i" . org-roam-node-insert)
+	 )
+  :config
+  (setq org-roam-directory "~/org-roam-notes")
+  (org-roam-setup))
 #+END_SRC
 
 * Custom convenience functions
